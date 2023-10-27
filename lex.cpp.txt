@@ -1,0 +1,798 @@
+
+#include "stdafx.h"
+#include "lex.h"
+#include <string>
+#include <iostream>
+using namespace std;
+
+bool is_first(string str_line, char c)
+{
+    int t_pos = 0;
+    while (str_line.at(t_pos) == ' ' || str_line.at(t_pos) == '\v' || str_line.at(t_pos) == '\t')
+        t_pos++;
+    if (str_line.at(t_pos) == c)
+        return true;
+    else
+        return false;
+}
+
+int keyword_check(string str, bool &is_keyword)
+{
+    string keyword[32] = 
+    {   "auto",
+        "break",
+        "case",
+        "char",
+        "const",
+        "continue",
+        "default",
+        "do",
+        "double",
+        "else",
+        "enum",
+        "extern",
+        "float",
+        "for",
+        "goto",
+        "if",
+        "int",
+        "long",
+        "register",
+        "return",
+        "short",
+        "signed",
+        "sizeof",
+        "static",
+        "struct",
+        "switch",
+        "typedef",
+        "union",
+        "unsigned",
+        "void",
+        "volatile",
+        "while" };
+
+    for (int i = 0; i < 32; i++)
+    {
+        if (str == keyword[i])
+        {
+            is_keyword = true;
+            return i;
+        }
+
+    }
+    return 0;
+}
+
+
+
+void int_const()
+{
+
+}
+void float_const()
+{
+
+
+
+}
+void str_const()
+{
+
+
+}
+
+int getToken(string *str_line, int max_no_of_lines)
+{
+	static int line_no = 0;
+	static unsigned int pos = 0;
+    static bool is_enclosed = false;
+    static bool is_comment = false;
+	int start_pos = 0, last_pos= 0;
+	while (1)
+	{
+
+#ifdef NO_PREPROCESSOR
+        is_prep();
+#endif
+        if (line_no > max_no_of_lines)
+        {
+            return EOT;
+        }
+      //  if (NULL_CHECK(pos) || CHAR_AT(pos, line_no) == '\n')
+        if ((NULL_CHECK(pos) && is_comment == false) || CHAR_AT(pos, line_no) == '\n')
+		{
+         //   printf("%d %d %d\n", pos, line_no,str_line[line_no].at(pos));
+          //  cout << str_line[line_no] << " " << CHAR_AT(pos, line_no) << endl;
+			line_no++;
+			pos = 0;
+			continue;
+		}
+        if (CHAR_AT(pos, line_no) != '"' && is_enclosed == true)
+        {
+            pos++;
+            continue;
+        }
+        while (CHAR_AT(pos, line_no) == ' ' || CHAR_AT(pos, line_no) == '\t' || CHAR_AT(pos, line_no) == '\v')
+			pos++; 
+
+        cout << CHAR_AT(pos, line_no) << endl;
+		switch (CHAR_AT(pos, line_no))
+		{
+              case '0':
+                  
+               /*   if (NULL_CHECK(pos+1) || SPACE_CHECK(pos+1))
+                  {
+                      pos++;
+                      return
+                  } */
+                  if (CHAR_AT(pos + 1, line_no) == 'x' || CHAR_AT(pos + 1, line_no) == 'X')
+                  {
+                      pos += 2;
+                      while ('0' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= '9')
+                          pos++;
+
+                      return INT_CONST;
+                  }
+                  else if (CHAR_AT(pos + 1, line_no) >= '0' && CHAR_AT(pos + 1, line_no) <= '9')
+                  {
+                      pos += 2;
+                      while ('0' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= '9')
+                          pos++;
+
+                      return INT_CONST;
+                  }
+              case '1': 
+              case '2': 
+              case '3': 
+              case '4': 
+              case '5': 
+              case '6': 
+              case '7': 
+              case '8': 
+              case '9':
+             {
+                 start_pos = pos;
+                 while ('0' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= '9')
+                     pos++;
+
+                 if (CHAR_AT(pos, line_no) == '.')
+                 {
+                     dec_pos = pos;
+                     pos++;
+                 }
+                 else if
+
+                 while ('0' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= '9')
+                     pos++;
+
+                 return INT_CONST;
+
+               break;
+             }
+              case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j':
+              case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't':
+              case 'u': case 'v': case 'w': case 'x': case 'y': case 'z':
+              {  goto IDENTIFIER;
+                  break;
+              }
+		     case '/':
+		     {   pos++;
+                 
+                 if (SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+			     {
+				     return '/';
+			     }
+                 else if (ALPHA_NUM_CHECK(pos))
+                     return '/';
+                 else if (CHAR_AT(pos, line_no) == '=')
+                     return DIV_ASSIGN;
+                 else if (CHAR_AT(pos, line_no) == '*')
+			     {
+				    pos ++;
+                    is_comment = true;
+COMMENTLOOP:				
+				    do
+				    {
+                        if (NULL_CHECK(pos) || CHAR_AT(pos, line_no) == '\n')
+                       {
+                          pos = 0;
+                          line_no++;
+                       }
+
+                    } while (CHAR_AT(pos++, line_no) != '*');
+                    NL_CHECK(pos);
+
+				    if (CHAR_AT(pos++, line_no) != '/')
+				    {
+					   goto COMMENTLOOP;
+				    }
+                    is_comment = false;
+                    NL_CHECK(pos);
+			     }
+                
+                 
+                 break;
+
+		      }
+		      case '.':
+              {	  pos++;
+			      if(SPACE_CHECK(pos))
+		          {
+			          return '.';
+		          }
+		          else if ( ALPHA_NUM_CHECK(pos))
+			          return '.';
+		          else if (CHAR_AT(pos, line_no) == '.' && CHAR_AT(pos + 1, line_no) == '.')
+			          return ELIPPSIS;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+		      }
+              case '+':
+              {   pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '+';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '+';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return ADD_ASSIGN;
+                  else if (CHAR_AT(pos, line_no) == '+')
+                      return INC_OP;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+              }
+              case '-':
+              {    pos++;
+                   if(SPACE_CHECK(pos))
+                   {
+                      return '-';
+                   }
+                   else if ( ALPHA_NUM_CHECK(pos))
+                      return '-';
+                   else if (CHAR_AT(pos, line_no) == '=')
+                      return SUB_ASSIGN;
+                   else if (CHAR_AT(pos, line_no) == '-')
+                       return DEC_OP;
+                   else {
+                       cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                       CRASH_NOW();
+                   }
+                   break;
+              }
+
+              case '*':
+              {
+                  pos++;
+                  if (is_comment == true)
+                      goto COMMENTLOOP;
+                  if(NULL_CHECK(pos) || SPACE_CHECK(pos))
+                  {
+                      return '*';
+                  }
+                  else if (ALPHA_NUM_CHECK(pos))
+                      return '*';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return MUL_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '%':
+              {
+                  pos++;
+                  if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                  {
+                      return '%';
+                  }
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return MOD_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '&':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '&';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '&';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return AND_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '^':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '^';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '^';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return XOR_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '|':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '|';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '|';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return OR_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '!':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '|';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '|';
+                  else if (CHAR_AT(pos, line_no) == '=')
+                      return NOT_ASSIGN;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+
+
+              /* for other operators and characters*/
+			  case '>':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '>';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '>';
+                  else if (CHAR_AT(pos, line_no) == '>')
+                      return RIGHT_OP;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case '<':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '<';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '<';
+                  else if (CHAR_AT(pos, line_no) == '<')
+                      return LEFT_OP;
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+              case '=':
+              {
+                  pos++;
+                  if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                  {
+                      return '=';
+                  }
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+
+              }
+			  case ';':
+              {
+                  pos++;
+                  if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                  {
+                      return ';';
+                  }
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+              }
+              case '{':
+              {
+                  pos++;
+                  if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                  {
+                      return '{';
+                  }
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+              }
+			  case '}':
+              {
+                  pos++;
+                  if(SPACE_CHECK(pos))
+                  {
+                      return '}';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return '}';
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+              }
+              case ',':
+              {    pos++;
+                   if (SPACE_CHECK(pos))
+                   {
+                       return ',';
+                   }
+                   if ( ALPHA_NUM_CHECK(pos))
+                  return ',';
+                   else {
+                       cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                       CRASH_NOW();
+                   }
+              break;
+              }
+			  case ':':
+              {    pos++;
+                 if (SPACE_CHECK(pos))
+                 {
+                  return ':';
+                 }
+                 else if ( ALPHA_NUM_CHECK(pos))
+                  return ':';
+                 else {
+                     cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                     CRASH_NOW();
+                 }
+              break;
+              }
+              case '(':
+              {     pos++;
+                  if (SPACE_CHECK(pos))
+                 {
+                     return '(';
+                 }
+                 else if ( ALPHA_NUM_CHECK(pos))
+                  return '(';
+                 else {
+                     cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                     CRASH_NOW();
+                 }
+              break;
+              }
+              case ')':
+              {    pos++;
+                   cout << str_line[line_no] <<" "<<line_no<< " "<< pos << endl;
+                   if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                   {
+                      return ')';
+                   }
+                   else {
+                       cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                       CRASH_NOW();
+                   }
+              break;
+              }
+			  case '[':
+              {    pos++;
+              if (NULL_CHECK(pos) || SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+              {
+                  return '[';
+              }
+              else if (CHAR_AT(pos, line_no) == ']')  /* Dynamic array case */
+              {
+                  return '[';
+              }
+                   else {
+                       cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                       CRASH_NOW();
+                   }
+              break;
+              }
+			  case ']':
+              {    pos++;
+                   if (SPACE_CHECK(pos) || ALPHA_NUM_CHECK(pos))
+                   {
+                       return ']';
+                   }
+                   else if (CHAR_AT(pos, line_no) == ';')
+                   {
+                       return ']';
+                   }
+                   else {
+                       cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                       CRASH_NOW();
+                   }
+               break;
+              }
+			  case '?':
+              {    
+                  pos++;
+                 if (SPACE_CHECK(pos))
+                 {
+                    return ']';
+                 }
+                 else {
+                     cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                     CRASH_NOW();
+                 }
+               break;
+              }
+			  case '~':
+              {
+                  pos++;
+                  if (SPACE_CHECK(pos))
+                  {
+                      return ']';
+                  }
+                  else if ( ALPHA_NUM_CHECK(pos))
+                      return ']';
+                  else {
+                      cout << "Crash due to Char at:" << CHAR_AT(pos, line_no);
+                      CRASH_NOW();
+                  }
+                  break;
+              }
+			
+
+		}
+
+
+        if (NULL_CHECK(pos))
+        {
+            line_no++;
+            continue;
+        }
+
+		start_pos = pos;
+		last_pos = pos;
+		while (('a' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= 'z'))
+		{
+			last_pos = pos;
+			pos++;
+		}
+		if (last_pos == pos - 1 && last_pos != start_pos)
+		{  
+            bool is_keyword = false;
+            string string_id = str_line[line_no].substr(start_pos, pos);
+            int token=keyword_check(string_id, is_keyword);
+			switch (CHAR_AT(pos, line_no))
+			{
+
+			    case '_':
+					goto IDENTIFIER;
+				case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9':
+					goto IDENTIFIER;
+			    case '\0':
+				case '\n':
+					pos = 0;
+					line_no++;
+					if (is_keyword == true)
+					{
+						return token;
+					}
+					else
+					{
+						return ID;
+					}
+					break;
+				case ' ':
+				case '\v':
+				case '\t':
+					pos++;
+					if (is_keyword == true)
+					{
+						return token;
+					}
+					else
+					{
+						return ID;
+					}
+
+				case '\\':
+
+				case '(':
+                    if (string_id == "if" || string_id == "switch" || string_id == "return" || string_id == "sizeof" || string_id == "while" || string_id == "for")
+						return token;
+					else if (is_keyword == true)
+					{
+						cout << "error: Wrong keyword usage !";
+						exit(0);
+					}
+					else
+						return ID;
+                case '[':
+                    return ID;
+				case '+':
+				case '-':
+				case '*':
+				case '/':
+				case '%':
+				case '&':
+				case '^':
+				case ')':
+				case '~':
+				case '<':
+				case '>':
+				case '.':
+				case '?':
+				case '|':
+					if (is_keyword == true)
+						return token;
+					else
+						return ID;
+				case ',':
+					if (is_keyword == true)
+						return token;
+					else
+						return ID;
+				case '!':
+					if (is_keyword == true)
+					{
+						cout << "error: Keyword wrong usage!";
+						exit(0);
+					}
+					else
+					{
+						return ID;
+					}
+				case '$':
+				case '@':
+				case '#':
+					if (is_keyword == true)
+					{
+						cout << "error: Keyword wrong usage!";
+						exit(0);
+					}
+				
+				case '"':
+					if (is_enclosed == true)
+					{
+						is_enclosed = false;
+						return STROBJ;
+					}
+					if (is_enclosed == false)
+					{
+						is_enclosed = true;
+						if (is_keyword == true)
+						{
+							cout << "error: Keyword wrong usage!";
+							exit(0);
+						}
+					}
+				case ':':
+				case '=':
+				case ';':
+					if (is_keyword == true)
+					{
+						cout << "error: Keyword wrong usage!";
+						exit(0);
+					}
+					else
+						return ID;
+
+					break;
+					
+			}
+		}
+		
+		
+		start_pos = pos;
+
+IDENTIFIER:		while (('a' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= 'z') || ('A' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= 'Z') || ('0' <= CHAR_AT(pos, line_no) && CHAR_AT(pos, line_no) <= '9') || CHAR_AT(pos, line_no) == '_')
+		        {
+			
+					switch (CHAR_AT(pos, line_no))
+					{
+					  
+					    case '0':case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9':
+						if (pos == start_pos)
+						{
+							cout << "error: not an identifier !";
+							exit(0);
+						}
+						break;
+					}
+					last_pos = pos;
+					pos++;
+			    }
+        if (pos - start_pos > 511)
+		{
+			cout << "error: an identifier has a limit of size 512 !";
+			exit(0);
+		}
+		if (((last_pos - start_pos) > 0) && last_pos > 0 && last_pos == (pos - 1))
+		{
+			switch (CHAR_AT(pos, line_no))
+			{
+			   case '+':
+			   case '-':
+			   case '*':
+			   case '/':
+			   case '%':
+			   case '&':
+			   case '^':
+			   case ')':
+			   case '~':
+			   case '<':
+			   case '>':
+			   case '.':
+               case ',':
+			   case '?':
+			   case '|':
+			   case ' ':
+			   case '\v':
+			   case '\t':
+				  pos++;
+				  return ID;
+			   case '\0':
+			   case '\n':
+				  pos = 0;
+				  line_no++;
+				return ID;
+			  break;
+			}
+		}
+
+
+
+
+
+
+
+	}
+
+
+}
