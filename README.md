@@ -1,2 +1,2 @@
 # C_Lexer
-A lexer for C language written in C++
+A prototype lexer for C language written in C++(Not a production version)
